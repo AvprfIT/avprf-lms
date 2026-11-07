@@ -1,9 +1,15 @@
-:root {
-    --avprf-orange: #FF7600;
-    --avprf-brown: #572000;
-    --avprf-dark-brown: #8B2E00;
-    --avprf-cream: #FFF3E5;
-    --avprf-gold: #FFD76A;
-    --avprf-green: #79A91B;
-    --avprf-white: #FFFFFF;
+@import "tailwindcss";
+
+@theme {
+  --color-avprf-orange: #FF7600;
+  --color-avprf-brown: #572000;
+  --color-avprf-cream: #FFF3E5;
+  --color-avprf-gold: #FFD76A;
+  --color-avprf-green: #79A91B;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #FFF3E5;
+  color: #572000;
 }

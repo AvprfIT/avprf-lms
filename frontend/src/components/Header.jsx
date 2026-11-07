@@ -1,71 +1,72 @@
 
-function Header() {
-    return (
-       <header id="page-topbar">
-            <div className="layout-width">
-                <div className="navbar-header">
-                    <div className="d-flex">
-                        <div className="navbar-brand-box">
-                            <a href="index.html" className="logo logo-dark">
-                                <span className="logo-sm">
-                                    <img src="assets/images/logo-sm.png" alt="" height="22" />
-                                </span>
-                                <span className="logo-lg">
-                                    <img src="assets/images/logo-dark.png" alt="" height="17" />
-                                </span>
-                            </a>
+import {
+  Menu,
+  Search,
+  Bell,
+  ChevronDown,
+  UserRound,
+  Settings,
+  LogOut,
+} from "lucide-react";
 
-                            <a href="index.html" className="logo logo-light">
-                                <span className="logo-sm">
-                                    <img src="assets/images/logo-sm.png" alt="" height="22"/>
-                                </span>
-                                <span className="logo-lg">
-                                    <img src="assets/images/logo-light.png" alt="" height="17"/>
-                                </span>
-                            </a>
-                        </div>
+function Header({ onMenuClick }) {
+  return (
+    <header className="fixed left-0 right-0 top-0 z-30 flex h-[67px] items-center justify-between border-b border-orange-100 bg-white px-4 shadow-sm md:left-72 md:px-8">
 
-                        <button type="button" className="btn btn-sm px-3 fs-16 header-item vertical-menu-btn topnav-hamburger"
-                            id="topnav-hamburger-icon">
-                            <span className="hamburger-icon">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </span>
-                        </button>
+      {/* Left Section */}
+      <div className="flex items-center gap-2">
 
-                       
-                    </div>
+        <button
+          onClick={onMenuClick}
+          className="rounded-lg p-2 text-[#572000] hover:bg-orange-50 md:hidden"
+        >
+          <Menu size={25} />
+        </button>
 
-                    <div className="d-flex align-items-center">
-                        <div className="dropdown ms-sm-3 header-item topbar-user">
-                            <button type="button" className="btn" id="page-header-user-dropdown" data-bs-toggle="dropdown"
-                                aria-haspopup="true" aria-expanded="false">
-                                <span className="d-flex align-items-center">
-                                    <img className="rounded-circle header-profile-user" src="assets/images/users/avatar-1.jpg"
-                                        alt="Header Avatar"/>
-                                    <span className="text-start ms-xl-2">
-                                        <span className="d-none d-xl-inline-block ms-1 fw-medium user-name-text">Anna Adame</span>
-                                        <span className="d-none d-xl-block ms-1 fs-12 text-muted user-name-sub-text">Founder</span>
-                                    </span>
-                                </span>
-                            </button>
-                            <div className="dropdown-menu dropdown-menu-end">
-                                
-                                <h6 className="dropdown-header">Welcome Anna!</h6>
-                                <a className="dropdown-item" href="pages-profile.html"><i
-                                        className="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i> <span
-                                        className="align-middle">Profile</span></a>                               
-                                <a className="dropdown-item" href="auth-logout-basic.html"><i
-                                        className="mdi mdi-logout text-muted fs-16 align-middle me-1"></i> <span
-                                        className="align-middle" data-key="t-logout">Logout</span></a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
-    );
+        <div>
+          <h2 className="text-lg font-semibold text-[#572000]">
+            AVPRF Student LMS 
+          </h2>
+          
+        </div>
+      </div>
+
+      {/* Right Section */}
+      <div className="flex items-center gap-3">
+
+        {/* Search */}
+        <button className="rounded-full p-2 text-gray-500 hover:bg-orange-50">
+          <Search size={21} />
+        </button>
+
+        {/* Notification */}
+        <button className="relative rounded-full p-2 text-gray-500 hover:bg-orange-50">
+          <Bell size={21} />
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#FF7600]"></span>
+        </button>
+
+        {/* Profile */}
+        <div className="flex cursor-pointer items-center gap-2 rounded-xl p-2 hover:bg-orange-50">
+
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-[#572000]">
+            <UserRound size={22} />
+          </div>
+
+          <div className="hidden text-left sm:block">
+            <p className="text-sm font-semibold text-[#572000]">
+              Student Name
+            </p>
+            <p className="text-xs text-gray-500">
+              Ayurveda Student
+            </p>
+          </div>
+
+          <ChevronDown size={16} className="hidden text-gray-500 sm:block" />
+        </div>
+
+      </div>
+    </header>
+  );
 }
 
 export default Header;
