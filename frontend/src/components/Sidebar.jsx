@@ -33,7 +33,7 @@ function Sidebar({ onNavigate }) {
       <div className="flex h-18 shrink-0 items-center justify-center border-b border-orange-100">
         <img src={avprfLogo} alt="AVPRF Logo" className="h-auto w-15 sm:w-14 md:w-15 lg:w-15" />
         <div className="ml-2 text-left text-xl font-bold text-[#572000]">
-          AVP Research
+          AVP Research 
           <span className="block text-sm font-medium">
              Foundation
           </span>

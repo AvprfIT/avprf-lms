@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import WelcomeImageHR from "../assets/images/welcome-image-hr.png";
+import CourseImage from "../assets/images/course-image.jpg";
 
 function Dashboard() {
 
@@ -120,6 +121,20 @@ function Dashboard() {
           <h2 className="flex items-center gap-2 text-lg font-semibold text-[#572000]">
             <PlayCircle className="text-[#FF7600]" /> Continue Learning
           </h2>
+          <div className="flex gap-2 mt-5">
+            <div className="flex-shrink-0">
+              <img src={CourseImage} alt="Course" className="h-auto w-50 rounded-lg object-cover" />
+            </div>
+            <div>
+              <h3 className="font-semibold">Advanced Clinical Course in Marma Therapy</h3>
+              <p className="text-[#000] text-sm mt-2 mb-2">Module 2: Marma Points and Indications</p>
+              <div className="flex"><div className="progress-bar bg-gray-300 h-2 rounded-full overflow-hidden">
+                <div className="progress bg-[#FF7600] h-full"></div></div><span>65%</span></div>
+              <button className="flex items-center gap-2 mt-3 bg-[#591b04] text-white py-2 px-4 rounded-lg hover:bg-[#e06a00]">
+                <PlayCircle />  Continue Learning
+              </button>
+            </div>
+            </div>
         </div>
 
         <div className="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm">
