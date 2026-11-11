@@ -13,10 +13,13 @@ import {
   CircleCheck,
 } from "lucide-react";
 
-import WelcomeImageHR from "../assets/images/welcome-image-hr.png";
-import CourseImage from "../assets/images/course-image.jpg";
+import WelcomeImageHR from "../../assets/images/welcome-image-hr.png";
+import CourseImage from "../../assets/images/course-image.jpg";
+import { useStudentAuth } from "../../context/StudentAuthContext";
 
 function Dashboard() {
+
+  const { student } = useStudentAuth();
 
   const stats = [
     {
@@ -71,7 +74,7 @@ function Dashboard() {
 
       {/* Welcome Banner */}
       <section className="relative overflow-hidden  mb-5">
-        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold  mb-2"> Welcome back, Student! 👋</h1>
+        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold  mb-2"> Welcome back, {student?.student_name || "Student"}! 👋</h1>
         <p className="hidden text-sm text-[#000] sm:block mb-2">
           Continue your Ayurveda learning journey.
           Learn, practice and grow with AVPRF.

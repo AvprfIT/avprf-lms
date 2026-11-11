@@ -13,3 +13,9 @@ body {
   background-color: #FFF3E5;
   color: #572000;
 }
+
+@layer components {
+  .form-input {
+    @apply w-full rounded-xl border border-[#EAD9C8] bg-white px-4 py-3 text-sm text-[#572000] outline-none transition focus:border-[#FF7600] focus:ring-2 focus:ring-[#FF7600]/10;
+  }
+}

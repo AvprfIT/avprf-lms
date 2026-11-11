@@ -8,8 +8,11 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
+import { useStudentAuth } from "../context/StudentAuthContext";
 
 function Header({ onMenuClick }) {
+  const { student } = useStudentAuth();
+
   return (
     <header className="fixed left-0 right-0 top-0 z-30 flex h-[67px] items-center justify-between border-b border-orange-100 bg-white px-4 shadow-sm md:left-72 md:px-8">
 
@@ -25,7 +28,7 @@ function Header({ onMenuClick }) {
 
         <div>
           <h2 className="text-lg font-semibold text-[#572000]">
-            AVPRF Student LMS 
+            AVPRF
           </h2>
           
         </div>
@@ -54,10 +57,10 @@ function Header({ onMenuClick }) {
 
           <div className="hidden text-left sm:block">
             <p className="text-sm font-semibold text-[#572000]">
-              Student Name
+              {student?.student_name || "Student"}
             </p>
             <p className="text-xs text-gray-500">
-              Ayurveda Student
+              {student?.email || "Ayurveda Student"}
             </p>
           </div>
 

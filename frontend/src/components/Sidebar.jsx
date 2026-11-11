@@ -8,14 +8,25 @@ import {
   Wallet,
   UserRound,
   GraduationCap,
+  LogOut
 } from "lucide-react";
 
 import avprfFooterLogo  from "../assets/images/sidebar-image.png";
 import avprfLogo  from "../assets/images/logo.png";
 
 import { NavLink } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useStudentAuth } from "../context/StudentAuthContext";
 
 function Sidebar({ onNavigate }) {
+  const { logout } = useStudentAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+      logout();
+      navigate("/student-login", { replace: true });
+  };
+
   const menuItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "My Courses", path: "/my-courses", icon: GraduationCap },
@@ -68,6 +79,16 @@ function Sidebar({ onNavigate }) {
             </NavLink>
           );
         })}
+
+        {/* Logout Button */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-4 rounded-xl px-4 py-3 font-medium text-red-600 transition-all hover:bg-red-50"
+        >
+          <LogOut size={21} />
+          <span>Logout</span>
+        </button>
 
       </nav>
 
