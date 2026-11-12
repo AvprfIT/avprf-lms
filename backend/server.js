@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 
 import db from "./config/database.js";
 import studentRoutes from "./routes/studentRoutes.js";
+import courseRoutes from "./routes/courseRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 dotenv.config();
 
@@ -23,6 +25,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/students", studentRoutes);
+app.use("/api/courses", courseRoutes);
+app.use("/api/users", userRoutes);
 
 // API welcome route
 app.get("/", (req, res) => {

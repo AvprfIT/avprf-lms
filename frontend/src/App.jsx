@@ -30,6 +30,7 @@ import ExamQuestions from "./pages/faculty/ExamQuestions";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminCourses from "./pages/admin/AdminCourses";
+import AddCourse from "./pages/admin/AddCourse";
 import AdminFaculty from "./pages/admin/AdminFaculty";
 import AdminStudents from "./pages/admin/AdminStudents";
 import AdminExaminations from "./pages/admin/AdminExaminations";
@@ -78,6 +79,7 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="courses" element={<AdminCourses />} />
+          <Route path="courses/add" element={<AddCourse />} />
           <Route path="faculty" element={<AdminFaculty />} />
           <Route path="students" element={<AdminStudents />} />
           <Route path="examinations" element={<AdminExaminations />} />

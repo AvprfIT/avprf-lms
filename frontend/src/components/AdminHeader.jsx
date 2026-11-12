@@ -6,7 +6,8 @@ export default function AdminHeader({ onMenuClick }) {
   const [showProfile, setShowProfile] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-[#F0E1D1] bg-white px-4 sm:px-6 lg:px-8">
+        <header className="fixed left-0 right-0 top-0 z-30 flex h-[76px] items-center justify-between border-b border-orange-100 bg-white px-4 shadow-sm md:left-72 md:px-8">
+
 
       <div className="flex items-center gap-3">
         <button

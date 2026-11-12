@@ -254,38 +254,75 @@ function MyProfile() {
   };
 
   // Change password
-  const handlePasswordSubmit = (e) => {
-    e.preventDefault();
+ 
+const handlePasswordSubmit = async (e) => {
+  e.preventDefault();
 
-    if (
-      !passwordData.currentPassword ||
-      !passwordData.newPassword ||
-      !passwordData.confirmPassword
-    ) {
-      alert("Please fill in all password fields.");
+  setError("");
+  setSuccess("");
+
+  if (passwordData.newPassword.length < 8) {
+    setError("New password must contain at least 8 characters.");
+    return;
+  }
+
+  if (
+    passwordData.newPassword !== passwordData.confirmPassword
+  ) {
+    setError("New password and confirm password do not match.");
+    return;
+  }
+
+  try {
+    setSaving(true);
+
+    const token = localStorage.getItem("studentToken");
+
+    if (!token) {
+      setError("Please login again.");
       return;
     }
 
-    if (passwordData.newPassword.length < 8) {
-      alert("New password must contain at least 8 characters.");
-      return;
+    const response = await API.put(
+      "/students/change-password",
+      {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (response.data.success) {
+      setSuccess(
+        response.data.message || "Password changed successfully!"
+      );
+
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+      setShowPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
     }
+  } catch (err) {
+    console.error("Change Password Error:", err);
 
-    if (
-      passwordData.newPassword !== passwordData.confirmPassword
-    ) {
-      alert("New password and confirm password do not match.");
-      return;
-    }
+    setError(
+      err.response?.data?.message ||
+      "Unable to change password. Please try again."
+    );
+  } finally {
+    setSaving(false);
+  }
+};
 
-    alert("Password update API will be connected next.");
-
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-  };
 
   const inputClass =
     "w-full rounded-xl border border-orange-100 bg-white px-4 py-3 text-sm text-[#572000] outline-none transition focus:border-[#FF7600] focus:ring-2 focus:ring-orange-100";
@@ -742,6 +779,7 @@ function MyProfile() {
       )}
 
       {/* Change Password */}
+       
       {activeTab === "password" && (
 
         <form

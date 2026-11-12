@@ -1,5 +1,7 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getCourses, saveCourses } from "../../components/courseStorage";
 import {
   Plus,
   Search,
@@ -8,7 +10,6 @@ import {
   Trash2,
   Eye,
   X,
-  Upload,
   Image as ImageIcon,
   IndianRupee,
   Clock,
@@ -17,71 +18,7 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronRight,
-  CirclePlus,
-  ClipboardList,
 } from "lucide-react";
-
-const initialCourses = [
-  {
-    id: 1,
-    title: "Advanced Clinical Ayurveda",
-    category: "Advanced Course",
-    duration: "30 Days",
-    feeType: "Paid",
-    fee: "15000",
-    status: "Published",
-    students: 65,
-    image: "",
-    description: "Advanced clinical training in Ayurveda.",
-    syllabus: [
-      {
-        id: 1,
-        title: "Introduction to Clinical Ayurveda",
-        topics: ["Clinical fundamentals", "Patient assessment"],
-      },
-      {
-        id: 2,
-        title: "Clinical Practice",
-        topics: ["Diagnosis", "Treatment planning"],
-      },
-    ],
-    assignedFaculty: [1, 2],
-  },
-  {
-    id: 2,
-    title: "Advanced Clinical Course - Marma Therapy",
-    category: "Clinical Course",
-    duration: "6 Days",
-    feeType: "Paid",
-    fee: "10000",
-    status: "Published",
-    students: 42,
-    image: "",
-    description: "Practical training in Marma Therapy.",
-    syllabus: [
-      {
-        id: 1,
-        title: "Introduction to Marma",
-        topics: ["Marma fundamentals", "Marma points"],
-      },
-    ],
-    assignedFaculty: [1, 3],
-  },
-  {
-    id: 3,
-    title: "Basic Ayurveda Course",
-    category: "Basic Course",
-    duration: "15 Days",
-    feeType: "Free",
-    fee: "0",
-    status: "Draft",
-    students: 0,
-    image: "",
-    description: "An introduction to the fundamentals of Ayurveda.",
-    syllabus: [],
-    assignedFaculty: [],
-  },
-];
 
 const facultyList = [
   {
@@ -106,40 +43,13 @@ const facultyList = [
   },
 ];
 
-const categories = [
-  "Basic Course",
-  "Advanced Course",
-  "Clinical Course",
-  "Certificate Course",
-  "Workshop",
-  "Internship",
-];
-
-const emptyCourse = {
-  title: "",
-  category: "Basic Course",
-  duration: "",
-  feeType: "Free",
-  fee: "",
-  status: "Draft",
-  description: "",
-  image: "",
-  syllabus: [],
-  assignedFaculty: [],
-};
-
 function AdminCourses() {
-  const [courses, setCourses] = useState(initialCourses);
+  const navigate = useNavigate();
+  const [courses, setCourses] = useState(getCourses);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
-  const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState("add");
-  const [form, setForm] = useState(emptyCourse);
-
-  const [editingId, setEditingId] = useState(null);
   const [viewCourse, setViewCourse] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
 
   const [expandedModules, setExpandedModules] = useState({});
 
@@ -167,223 +77,6 @@ function AdminCourses() {
     0
   );
 
-  const openAddModal = () => {
-    setModalMode("add");
-    setEditingId(null);
-    setForm({
-      ...emptyCourse,
-      syllabus: [],
-      assignedFaculty: [],
-    });
-    setImagePreview("");
-    setShowModal(true);
-  };
-
-  const openEditModal = (course) => {
-    setModalMode("edit");
-    setEditingId(course.id);
-
-    const courseForm = {
-      ...emptyCourse,
-      ...course,
-      syllabus: course.syllabus || [],
-      assignedFaculty: course.assignedFaculty || [],
-    };
-
-    setForm(courseForm);
-    setImagePreview(course.image || "");
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setImagePreview("");
-    setEditingId(null);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
-  };
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      alert("Please select a valid image file.");
-      e.target.value = "";
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image size must be less than 5 MB.");
-      e.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onloadend = () => {
-      const imageData = reader.result;
-
-      setImagePreview(imageData);
-
-      setForm((previous) => ({
-        ...previous,
-        image: imageData,
-      }));
-    };
-
-    reader.readAsDataURL(file);
-  };
-
-  const addSyllabusModule = () => {
-    const newModule = {
-      id: Date.now(),
-      title: "",
-      topics: [],
-    };
-
-    setForm((previous) => ({
-      ...previous,
-      syllabus: [...previous.syllabus, newModule],
-    }));
-  };
-
-  const updateModuleTitle = (moduleId, title) => {
-    setForm((previous) => ({
-      ...previous,
-      syllabus: previous.syllabus.map((module) =>
-        module.id === moduleId ? { ...module, title } : module
-      ),
-    }));
-  };
-
-  const removeSyllabusModule = (moduleId) => {
-    setForm((previous) => ({
-      ...previous,
-      syllabus: previous.syllabus.filter(
-        (module) => module.id !== moduleId
-      ),
-    }));
-  };
-
-  const addSyllabusTopic = (moduleId) => {
-    setForm((previous) => ({
-      ...previous,
-      syllabus: previous.syllabus.map((module) =>
-        module.id === moduleId
-          ? {
-              ...module,
-              topics: [
-                ...module.topics,
-                `Topic ${module.topics.length + 1}`,
-              ],
-            }
-          : module
-      ),
-    }));
-  };
-
-  const updateSyllabusTopic = (moduleId, topicIndex, value) => {
-    setForm((previous) => ({
-      ...previous,
-      syllabus: previous.syllabus.map((module) =>
-        module.id === moduleId
-          ? {
-              ...module,
-              topics: module.topics.map((topic, index) =>
-                index === topicIndex ? value : topic
-              ),
-            }
-          : module
-      ),
-    }));
-  };
-
-  const removeSyllabusTopic = (moduleId, topicIndex) => {
-    setForm((previous) => ({
-      ...previous,
-      syllabus: previous.syllabus.map((module) =>
-        module.id === moduleId
-          ? {
-              ...module,
-              topics: module.topics.filter(
-                (_, index) => index !== topicIndex
-              ),
-            }
-          : module
-      ),
-    }));
-  };
-
-  const toggleFaculty = (facultyId) => {
-    setForm((previous) => {
-      const alreadyAssigned = previous.assignedFaculty.includes(facultyId);
-
-      return {
-        ...previous,
-        assignedFaculty: alreadyAssigned
-          ? previous.assignedFaculty.filter((id) => id !== facultyId)
-          : [...previous.assignedFaculty, facultyId],
-      };
-    });
-  };
-
-  const handleSave = (e) => {
-    e.preventDefault();
-
-    if (!form.title.trim()) {
-      alert("Please enter the course title.");
-      return;
-    }
-
-    if (!form.duration.trim()) {
-      alert("Please enter the course duration.");
-      return;
-    }
-
-    if (form.feeType === "Paid" && Number(form.fee) <= 0) {
-      alert("Please enter a valid course fee.");
-      return;
-    }
-
-    const courseData = {
-      ...form,
-      fee: form.feeType === "Free" ? "0" : form.fee,
-      syllabus: form.syllabus.map((module) => ({
-        ...module,
-        topics: module.topics.filter((topic) => topic.trim()),
-      })),
-    };
-
-    if (modalMode === "add") {
-      const newCourse = {
-        ...courseData,
-        id: Date.now(),
-        students: 0,
-      };
-
-      setCourses((previous) => [newCourse, ...previous]);
-    } else {
-      setCourses((previous) =>
-        previous.map((course) =>
-          course.id === editingId
-            ? { ...course, ...courseData }
-            : course
-        )
-      );
-    }
-
-    closeModal();
-  };
-
   const handleDelete = (courseId) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this course?"
@@ -391,23 +84,19 @@ function AdminCourses() {
 
     if (!confirmDelete) return;
 
-    setCourses((previous) =>
-      previous.filter((course) => course.id !== courseId)
-    );
+    const next = courses.filter((course) => course.id !== courseId);
+    setCourses(next);
+    saveCourses(next);
   };
 
   const toggleStatus = (courseId) => {
-    setCourses((previous) =>
-      previous.map((course) =>
-        course.id === courseId
-          ? {
-              ...course,
-              status:
-                course.status === "Published" ? "Draft" : "Published",
-            }
-          : course
-      )
+    const next = courses.map((course) =>
+      course.id === courseId
+        ? { ...course, status: course.status === "Published" ? "Draft" : "Published" }
+        : course
     );
+    setCourses(next);
+    saveCourses(next);
   };
 
   const toggleModuleView = (moduleId) => {
@@ -437,7 +126,7 @@ function AdminCourses() {
         </div>
 
         <button
-          onClick={openAddModal}
+          onClick={() => navigate("/admin/courses/add")}
           className="flex items-center justify-center gap-2 rounded-xl bg-[#FF7600] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e96900]"
         >
           <Plus size={18} />
@@ -603,7 +292,7 @@ function AdminCourses() {
                   </button>
 
                   <button
-                    onClick={() => openEditModal(course)}
+                    onClick={() => navigate(`/admin/courses/edit/${course.id}`)}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#FF7600]/30 px-3 py-2 text-xs font-semibold text-[#E96900] hover:bg-[#FFF3E5]"
                   >
                     <Pencil size={15} />
@@ -629,374 +318,6 @@ function AdminCourses() {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Add / Edit Course Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-5">
-          <div className="flex max-h-[95vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-[#F0E2D3] px-5 py-4 sm:px-7">
-              <div>
-                <h2 className="text-xl font-bold text-[#572000]">
-                  {modalMode === "add" ? "Add New Course" : "Edit Course"}
-                </h2>
-                <p className="mt-1 text-xs text-[#9B806C]">
-                  Manage course information, syllabus and faculty.
-                </p>
-              </div>
-
-              <button
-                onClick={closeModal}
-                className="rounded-lg p-2 text-[#8B6B55] hover:bg-[#FFF3E5]"
-              >
-                <X size={22} />
-              </button>
-            </div>
-
-            {/* Modal Form */}
-            <form
-              onSubmit={handleSave}
-              className="space-y-6 overflow-y-auto p-5 sm:p-7"
-            >
-              {/* Basic Information */}
-              <section>
-                <SectionHeading title="Course Information" />
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="md:col-span-2">
-                    <label className="form-label">Course Title *</label>
-                    <input
-                      name="title"
-                      value={form.title}
-                      onChange={handleInputChange}
-                      placeholder="Enter course title"
-                      className="form-input"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="form-label">Course Category *</label>
-                    <select
-                      name="category"
-                      value={form.category}
-                      onChange={handleInputChange}
-                      className="form-input"
-                    >
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="form-label">Course Duration *</label>
-                    <input
-                      name="duration"
-                      value={form.duration}
-                      onChange={handleInputChange}
-                      placeholder="Example: 30 Days"
-                      className="form-input"
-                      required
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="form-label">Course Description</label>
-                    <textarea
-                      name="description"
-                      value={form.description}
-                      onChange={handleInputChange}
-                      rows="3"
-                      placeholder="Enter course description..."
-                      className="form-input resize-none"
-                    />
-                  </div>
-                </div>
-              </section>
-
-              {/* Course Image */}
-              <section>
-                <SectionHeading title="Course Image" />
-
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                  <div className="flex h-36 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-[#D9C3AF] bg-[#FFF8EF] sm:w-52">
-                    {imagePreview ? (
-                      <img
-                        src={imagePreview}
-                        alt="Course preview"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="text-center text-[#B49A83]">
-                        <ImageIcon size={35} className="mx-auto" />
-                        <p className="mt-2 text-xs">Image Preview</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#FF7600] px-4 py-2.5 text-sm font-semibold text-[#FF7600] hover:bg-[#FFF3E5]">
-                      <Upload size={17} />
-                      Upload Image
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                    </label>
-
-                    <p className="mt-2 text-xs text-[#9B806C]">
-                      JPG, PNG or WEBP. Maximum size 5 MB.
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Course Fee */}
-              <section>
-                <SectionHeading title="Course Fee" />
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="form-label">Course Type *</label>
-                    <select
-                      name="feeType"
-                      value={form.feeType}
-                      onChange={(e) => {
-                        const value = e.target.value;
-
-                        setForm((previous) => ({
-                          ...previous,
-                          feeType: value,
-                          fee: value === "Free" ? "0" : "",
-                        }));
-                      }}
-                      className="form-input"
-                    >
-                      <option value="Free">Free Course</option>
-                      <option value="Paid">Paid Course</option>
-                    </select>
-                  </div>
-
-                  {form.feeType === "Paid" && (
-                    <div>
-                      <label className="form-label">
-                        Course Fee (₹) *
-                      </label>
-                      <input
-                        type="number"
-                        name="fee"
-                        min="1"
-                        value={form.fee}
-                        onChange={handleInputChange}
-                        placeholder="Enter course fee"
-                        className="form-input"
-                        required
-                      />
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* Syllabus */}
-              <section>
-                <div className="mb-4 flex items-center justify-between">
-                  <SectionHeading title="Course Syllabus" />
-
-                  <button
-                    type="button"
-                    onClick={addSyllabusModule}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#FFF3E5] px-3 py-2 text-xs font-semibold text-[#E96900] hover:bg-[#FFE7CF]"
-                  >
-                    <Plus size={15} />
-                    Add Module
-                  </button>
-                </div>
-
-                {form.syllabus.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-[#EAD9C8] bg-[#FFF8EF] p-6 text-center">
-                    <ClipboardList
-                      size={28}
-                      className="mx-auto text-[#B49A83]"
-                    />
-                    <p className="mt-2 text-sm text-[#92745D]">
-                      No syllabus modules added yet.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {form.syllabus.map((module, moduleIndex) => (
-                      <div
-                        key={module.id}
-                        className="rounded-xl border border-[#EAD9C8] p-4"
-                      >
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                          <div className="flex-1">
-                            <label className="form-label">
-                              Module {moduleIndex + 1}
-                            </label>
-                            <input
-                              value={module.title}
-                              onChange={(e) =>
-                                updateModuleTitle(
-                                  module.id,
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Enter module title"
-                              className="form-input"
-                            />
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              removeSyllabusModule(module.id)
-                            }
-                            className="self-end rounded-lg p-2 text-red-500 hover:bg-red-50 sm:self-center"
-                            title="Remove module"
-                          >
-                            <Trash2 size={17} />
-                          </button>
-                        </div>
-
-                        <div className="mt-4 space-y-2">
-                          <p className="text-xs font-semibold text-[#8B6B55]">
-                            Topics
-                          </p>
-
-                          {module.topics.map((topic, topicIndex) => (
-                            <div
-                              key={topicIndex}
-                              className="flex items-center gap-2"
-                            >
-                              <input
-                                value={topic}
-                                onChange={(e) =>
-                                  updateSyllabusTopic(
-                                    module.id,
-                                    topicIndex,
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="Enter topic"
-                                className="form-input"
-                              />
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  removeSyllabusTopic(
-                                    module.id,
-                                    topicIndex
-                                  )
-                                }
-                                className="rounded-lg p-2 text-red-500 hover:bg-red-50"
-                              >
-                                <X size={17} />
-                              </button>
-                            </div>
-                          ))}
-
-                          <button
-                            type="button"
-                            onClick={() => addSyllabusTopic(module.id)}
-                            className="mt-1 flex items-center gap-1 text-xs font-semibold text-[#FF7600] hover:underline"
-                          >
-                            <CirclePlus size={15} />
-                            Add Topic
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              {/* Faculty Assignment */}
-              <section>
-                <SectionHeading title="Assign Faculty" />
-
-                <p className="mb-3 text-xs text-[#92745D]">
-                  Select one or more faculty members for this course.
-                </p>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {facultyList.map((faculty) => {
-                    const checked = form.assignedFaculty.includes(
-                      faculty.id
-                    );
-
-                    return (
-                      <label
-                        key={faculty.id}
-                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${
-                          checked
-                            ? "border-[#FF7600] bg-[#FFF8EF]"
-                            : "border-[#EAD9C8] hover:bg-[#FFF8EF]"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleFaculty(faculty.id)}
-                          className="h-4 w-4 accent-[#FF7600]"
-                        />
-
-                        <div>
-                          <p className="text-sm font-semibold text-[#572000]">
-                            {faculty.name}
-                          </p>
-                          <p className="text-xs text-[#92745D]">
-                            {faculty.specialization}
-                          </p>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              </section>
-
-              {/* Publish Status */}
-              <section>
-                <SectionHeading title="Course Status" />
-
-                <select
-                  name="status"
-                  value={form.status}
-                  onChange={handleInputChange}
-                  className="form-input"
-                >
-                  <option value="Draft">Draft</option>
-                  <option value="Published">Published</option>
-                </select>
-              </section>
-
-              {/* Footer Buttons */}
-              <div className="flex flex-col-reverse justify-end gap-3 border-t border-[#F0E2D3] pt-5 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="rounded-xl border border-[#EAD9C8] px-6 py-3 text-sm font-semibold text-[#572000] hover:bg-[#FFF8EF]"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  className="rounded-xl bg-[#FF7600] px-7 py-3 text-sm font-semibold text-white hover:bg-[#e96900]"
-                >
-                  {modalMode === "add" ? "Create Course" : "Update Course"}
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
 
@@ -1172,14 +493,6 @@ function StatCard({ icon, label, value }) {
         </h3>
       </div>
     </div>
-  );
-}
-
-function SectionHeading({ title }) {
-  return (
-    <h3 className="mb-4 border-l-4 border-[#FF7600] pl-3 text-base font-bold text-[#572000]">
-      {title}
-    </h3>
   );
 }
 

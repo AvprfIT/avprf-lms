@@ -46,9 +46,9 @@ function AdminLayout() {
 
             {/* Main Content */}
             <main className="min-h-screen pt-[76px] md:ml-72">
-                <div>
+                {/* <div>
                     <img src={DashboardImage} alt="Dashboard" className=" absolute right-0 top-15 h-37 w-auto object-cover hidden lg:block" />
-                </div>
+                </div> */}
                 <div className="p-4 md:p-8">
                     <Outlet />
                 </div>
