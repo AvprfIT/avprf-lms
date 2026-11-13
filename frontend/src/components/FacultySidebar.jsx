@@ -12,11 +12,16 @@ import {
   ClipboardList
 } from "lucide-react";
 
-import { NavLink } from "react-router-dom";
-import avprfFooterLogo  from "../assets/images/sidebar-image.png";
-import avprfLogo  from "../assets/images/logo.png";
+import { NavLink, useNavigate } from "react-router-dom";
+import avprfFooterLogo from "../assets/images/sidebar-image.png";
+import avprfLogo from "../assets/images/logo.png";
+import { useUserAuth } from "../context/UserAuthContext";
 
 function FacultySidebar({ onNavigate }) {
+  const { logout } = useUserAuth();
+  const navigate = useNavigate();
+  const handleLogout = () => { logout(); navigate("/faculty-login", { replace: true }); };
+
   const menuItems = [
     {
       name: "Dashboard",
@@ -58,26 +63,22 @@ function FacultySidebar({ onNavigate }) {
       path: "/faculty/profile",
       icon: UserRound,
     },
-    {
-      name: "Logout",
-      path: "/faculty/logout",
-      icon: LogOut,
-    },
+
   ];
 
   return (
     <aside className="flex h-full w-72 flex-col border-r border-orange-100 bg-[#FFF8EF]">
 
       {/* Logo */}
-       <div className="flex h-18 shrink-0 items-center justify-center border-b border-orange-100">
-              <img src={avprfLogo} alt="AVPRF Logo" className="h-auto w-15 sm:w-14 md:w-15 lg:w-15" />
-              <div className="ml-2 text-left text-xl font-bold text-[#572000]">
-                AVP Research 
-                <span className="block text-sm font-medium">
-                   Foundation
-                </span>
-              </div>
-            </div>
+      <div className="flex h-18 shrink-0 items-center justify-center border-b border-orange-100">
+        <img src={avprfLogo} alt="AVPRF Logo" className="h-auto w-15 sm:w-14 md:w-15 lg:w-15" />
+        <div className="ml-2 text-left text-xl font-bold text-[#572000]">
+          AVP Research
+          <span className="block text-sm font-medium">
+            Foundation
+          </span>
+        </div>
+      </div>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-6">
@@ -93,13 +94,11 @@ function FacultySidebar({ onNavigate }) {
             <NavLink
               key={item.path}
               to={item.path}
-              end={item.path === "/faculty/dashboard"}
               onClick={onNavigate}
               className={({ isActive }) =>
-                `flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
-                  isActive
-                    ? "bg-[#FF7600] text-white shadow-md"
-                    : "text-[#572000] hover:bg-orange-100"
+                `flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all ${isActive
+                  ? "bg-[#FF7600] text-white shadow-md"
+                  : "text-[#572000] hover:bg-orange-100"
                 }`
               }
             >
@@ -108,14 +107,23 @@ function FacultySidebar({ onNavigate }) {
             </NavLink>
           );
         })}
+        {/* Logout Button */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-4 rounded-xl px-4 py-3 font-medium text-red-600 transition-all hover:bg-red-50"
+        >
+          <LogOut size={21} />
+          <span>Logout</span>
+        </button>
       </nav>
 
       {/* Footer */}
-            <div className="shrink-0 border-t border-orange-100 p-5 text-center text-xs text-[#8B6B55]">
-              <img src={avprfFooterLogo} alt="AVPRF Logo" className="mx-auto h-auto w-36 sm:w-40 md:w-48 lg:w-56 mb-2" />
-              © AVPRF Research Foundation
-            </div>
-      
+      <div className="shrink-0 border-t border-orange-100 p-5 text-center text-xs text-[#8B6B55]">
+        <img src={avprfFooterLogo} alt="AVPRF Logo" className="mx-auto h-auto w-36 sm:w-40 md:w-48 lg:w-56 mb-2" />
+        © AVPRF Research Foundation
+      </div>
+
     </aside>
   );
 }

@@ -61,12 +61,18 @@ const initialCourses = [
   },
 ];
 
-export const getCourses = () => {
+export const getCourses =  () => {
   try {
-    const saved = localStorage.getItem("avprf_admin_courses");
-    return saved ? JSON.parse(saved) : initialCourses;
-  } catch {
-    return initialCourses;
+    const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");;
+    const response = API.get(
+      "/courses",
+        {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    return response.data.courses || [];
+  } catch (error){
+      console.log("Get Courses Error:", error);
+        throw error;
   }
 };
 

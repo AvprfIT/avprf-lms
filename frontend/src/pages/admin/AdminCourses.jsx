@@ -1,6 +1,7 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API from "../../api/axios";
 import { getCourses, saveCourses } from "../../components/courseStorage";
 import {
   Plus,
@@ -20,33 +21,35 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-const facultyList = [
-  {
-    id: 1,
-    name: "Dr. Arun Kumar",
-    specialization: "Ayurveda Physician",
-  },
-  {
-    id: 2,
-    name: "Dr. Priya",
-    specialization: "Panchakarma",
-  },
-  {
-    id: 3,
-    name: "Dr. Rahul",
-    specialization: "Clinical Ayurveda",
-  },
-  {
-    id: 4,
-    name: "Dr. Meena",
-    specialization: "Marma Therapy",
-  },
-];
-
 function AdminCourses() {
   const navigate = useNavigate();
-  const [courses, setCourses] = useState(getCourses);
   const [search, setSearch] = useState("");
+  const [courses, setCourses] = useState([]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const token =
+          localStorage.getItem("userToken") ||
+          sessionStorage.getItem("userToken");
+
+        const response = await API.get("/courses", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        setCourses(response.data.courses || []);
+
+      } catch (error) {
+        console.log("Course Error:", error);
+      }
+    };
+
+    // IMPORTANT: Function call
+    fetchCourses();
+
+  }, []);
+
   const [statusFilter, setStatusFilter] = useState("All");
 
   const [viewCourse, setViewCourse] = useState(null);
@@ -54,7 +57,7 @@ function AdminCourses() {
   const [expandedModules, setExpandedModules] = useState({});
 
   const filteredCourses = courses.filter((course) => {
-    const matchesSearch = course.title
+    const matchesSearch = course.course_title
       .toLowerCase()
       .includes(search.toLowerCase());
 
@@ -65,7 +68,7 @@ function AdminCourses() {
   });
 
   const publishedCount = courses.filter(
-    (course) => course.status === "Published"
+    (course) => course.status === "published"
   ).length;
 
   const draftCount = courses.filter(
@@ -92,7 +95,7 @@ function AdminCourses() {
   const toggleStatus = (courseId) => {
     const next = courses.map((course) =>
       course.id === courseId
-        ? { ...course, status: course.status === "Published" ? "Draft" : "Published" }
+        ? { ...course, status: course.status === "published" ? "Draft" : "Published" }
         : course
     );
     setCourses(next);
@@ -106,11 +109,7 @@ function AdminCourses() {
     }));
   };
 
-  const getFacultyNames = (facultyIds = []) => {
-    return facultyIds
-      .map((id) => facultyList.find((faculty) => faculty.id === id)?.name)
-      .filter(Boolean);
-  };
+
 
   return (
     <div className="space-y-6">
@@ -184,8 +183,8 @@ function AdminCourses() {
           className="rounded-xl border border-[#EAD9C8] bg-white px-4 py-3 text-sm outline-none focus:border-[#FF7600]"
         >
           <option value="All">All Status</option>
-          <option value="Published">Published</option>
-          <option value="Draft">Draft</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
         </select>
       </div>
 
@@ -222,11 +221,10 @@ function AdminCourses() {
                 )}
 
                 <span
-                  className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-semibold ${
-                    course.status === "Published"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-yellow-100 text-yellow-700"
-                  }`}
+                  className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-semibold ${course.status === "Published"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
+                    }`}
                 >
                   {course.status}
                 </span>
@@ -354,9 +352,12 @@ function AdminCourses() {
                 <h3 className="mt-1 text-xl font-bold text-[#572000]">
                   {viewCourse.title}
                 </h3>
-                <p className="mt-2 text-sm text-[#8B6B55]">
-                  {viewCourse.description || "No description available."}
-                </p>
+                <div
+                  className="mt-2 text-sm text-[#8B6B55]"
+                  dangerouslySetInnerHTML={{
+                    __html: viewCourse.description || "No description available."
+                  }}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -437,34 +438,17 @@ function AdminCourses() {
                 <h4 className="mb-3 font-semibold text-[#572000]">
                   Assigned Faculty
                 </h4>
-
-                {getFacultyNames(viewCourse.assignedFaculty).length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {getFacultyNames(viewCourse.assignedFaculty).map(
-                      (name) => (
-                        <span
-                          key={name}
-                          className="rounded-full bg-[#FFF3E5] px-3 py-2 text-xs font-semibold text-[#8B2E00]"
-                        >
-                          {name}
-                        </span>
-                      )
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-[#9B806C]">
-                    No faculty assigned.
-                  </p>
-                )}
+                <p className="mt-2 text-sm text-[#8B6B55]">
+                  {viewCourse.assignedFaculty || "No faculty available."}
+                </p>
               </div>
 
               <div>
                 <span
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                    viewCourse.status === "Published"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-yellow-100 text-yellow-700"
-                  }`}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold ${viewCourse.status === "Published"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
+                    }`}
                 >
                   {viewCourse.status}
                 </span>

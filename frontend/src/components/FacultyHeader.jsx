@@ -8,15 +8,19 @@ import {
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
+import { useUserAuth } from "../context/UserAuthContext";
 
 function FacultyHeader({ onMenuClick }) {
   const navigate = useNavigate();
+  const { user: faculty, logout } = useUserAuth();
+
 
   const handleLogout = () => {
     const confirmed = window.confirm("Are you sure you want to logout?");
 
     if (confirmed) {
-      navigate("/faculty-login");
+      logout();
+      navigate("/faculty-login", { replace: true });
     }
   };
 
@@ -63,14 +67,14 @@ function FacultyHeader({ onMenuClick }) {
 
           <div className="hidden sm:block">
             <p className="text-sm font-semibold text-[#572000]">
-              Faculty Name
+              {faculty?.name || Faculty}
             </p>
             <p className="text-xs text-gray-500">
               Faculty Member
             </p>
           </div>
 
-         
+
         </div>
       </div>
     </header>

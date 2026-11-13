@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import WelcomeImageHR from "../../assets/images/welcome-image-hr.png";
+import { useUserAuth  } from "../../context/UserAuthContext";
+
 
 const stats = [
   {
@@ -145,6 +147,10 @@ const upcomingSessions = [
 ];
 
 function FacultyDashboard() {
+
+  const { user: faculty } = useUserAuth();
+  
+  
   const [period, setPeriod] = useState("This Week");
 
   return (
@@ -152,7 +158,7 @@ function FacultyDashboard() {
 
       {/* Welcome Banner */}
         <section className="relative overflow-hidden  mb-5">
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold  mb-2"> Welcome back, Faculty! 👋</h1>
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold  mb-2"> Welcome back, {faculty ?.name || Faculty}! 👋</h1>
           <p className="hidden text-sm text-[#000] sm:block mb-2">
             Manage your courses, support your students and monitor their learning progress from your faculty dashboard.
           </p>

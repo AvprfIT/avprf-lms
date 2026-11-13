@@ -7,6 +7,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import Quill from "quill";
 import "quill/dist/quill.snow.css";
+import API from "../api/axios";
 
 const categories = [
   "Basic Course",
@@ -62,6 +63,8 @@ export default function CourseForm({
   onSubmit,
   onCancel,
 }) {
+
+
   const [form, setForm] = useState(() => ({
     ...emptyCourse,
     ...initialData,
@@ -187,23 +190,36 @@ export default function CourseForm({
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    const courseTitle = form.course_title.trim();
-    if (!courseTitle) {
-      alert("Please enter the course title.");
-      return;
-    }
+    const newErrors = {};
 
+    if (!form.course_title.trim()) {
+      newErrors.name = "Course title is required";
+    }
+    if (!form.category) {
+      newErrors.category = "Course category is required";
+    }
+    if (!form.duration.trim()) {
+      newErrors.duration = "duration is required";
+    }
+    if (!form.eligibility.trim()) {
+      newErrors.eligibility = "eligibility is required";
+    }
+    if (!form.language.trim()) {
+      newErrors.language = "language is required";
+    }
     if (form.fee_type === "paid" && Number(form.fee) <= 0) {
-      alert("Please enter a valid course fee.");
-      return;
+      newErrors.fee_type = "Please enter a valid course fee";
     }
-
     if (
       form.start_date &&
       form.end_date &&
       form.end_date < form.start_date
     ) {
-      alert("End date cannot be earlier than start date.");
+      newErrors.fee_type = "End date cannot be earlier than start date";
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
 
@@ -221,12 +237,46 @@ export default function CourseForm({
       assignedFaculty: form.assignedFaculty || [],
     });
   };
+  const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState(null);
 
   return (
     <form
       onSubmit={handleSubmit}
       className="space-y-6 overflow-y-auto p-5 sm:p-7"
     >
+      {toast && (
+        <div
+          className={`fixed right-5 top-5 z-[100] flex min-w-[300px] items-center gap-3 rounded-xl border p-4 shadow-lg ${toast.type === "success"
+            ? "border-green-200 bg-green-50"
+            : "border-red-200 bg-red-50"
+            }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle className="text-green-600" size={24} />
+          ) : (
+            <AlertCircle className="text-red-600" size={24} />
+          )}
+
+          <p
+            className={`flex-1 text-sm font-semibold ${toast.type === "success"
+              ? "text-green-700"
+              : "text-red-700"
+              }`}
+          >
+            {toast.message}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="text-gray-500 hover:text-gray-800"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
+
       {/* Course information */}
       <section>
         <SectionHeading title="Course Information" />
@@ -239,9 +289,9 @@ export default function CourseForm({
               value={form.course_title}
               onChange={handleInputChange}
               placeholder="Enter course title"
-              className="form-input"
-              required
+              className={`form-input ${errors.name ? "border-red-500" : ""}`}
             />
+            {errors.name && (<span className="mt-1 text-xs text-red-500">{errors.name}</span>)}
           </div>
 
           <div>
@@ -250,7 +300,7 @@ export default function CourseForm({
               name="category"
               value={form.category || ""}
               onChange={handleInputChange}
-              className="form-input"
+              className={`form-input ${errors.category ? "border-red-500" : ""}`}
             >
               <option value="">Select category</option>
               {categories.map((category) => (
@@ -259,6 +309,7 @@ export default function CourseForm({
                 </option>
               ))}
             </select>
+            {errors.category && (<span className="mt-1 text-xs text-red-500">{errors.category}</span>)}
           </div>
 
           <div>
@@ -268,8 +319,9 @@ export default function CourseForm({
               value={form.duration || ""}
               onChange={handleInputChange}
               placeholder="Example: 30 Days"
-              className="form-input"
+              className={`form-input ${errors.duration ? "border-red-500" : ""}`}
             />
+            {errors.duration && (<span className="mt-1 text-xs text-red-500">{errors.duration}</span>)}
           </div>
 
           <div>
@@ -279,8 +331,9 @@ export default function CourseForm({
               value={form.eligibility || ""}
               onChange={handleInputChange}
               placeholder="Example: BAMS / Healthcare professionals"
-              className="form-input"
+              className={`form-input ${errors.eligibility ? "border-red-500" : ""}`}
             />
+            {errors.eligibility && (<span className="mt-1 text-xs text-red-500">{errors.eligibility}</span>)}
           </div>
 
           <div>
@@ -290,8 +343,9 @@ export default function CourseForm({
               value={form.language || ""}
               onChange={handleInputChange}
               placeholder="Example: English, Tamil"
-              className="form-input"
+              className={`form-input ${errors.language ? "border-red-500" : ""}`}
             />
+            {errors.language && (<span className="mt-1 text-xs text-red-500">{errors.language}</span>)}
           </div>
 
           <div>

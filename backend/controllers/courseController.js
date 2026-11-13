@@ -37,7 +37,7 @@ const validateFaculty = async (connection, facultyIds) => {
   const placeholders = facultyIds.map(() => "?").join(",");
 
   const [faculty] = await connection.execute(
-    `SELECT id FROM users
+    `SELECT id, name FROM users
      WHERE role = 'faculty'
      AND status = 'active'
      AND id IN (${placeholders})`,
@@ -50,48 +50,37 @@ const validateFaculty = async (connection, facultyIds) => {
 };
 
 // GET /api/courses
+// GET /api/courses
 export const getAllCourses = async (req, res) => {
-  try {
-    const [courses] = await db.execute(
-      `SELECT * FROM courses ORDER BY created_at DESC`
-    );
+    try {
 
-    if (!courses.length) {
-      return res.status(200).json({
-        success: true,
-        courses: [],
-      });
+        const [courses] = await db.execute(`
+            SELECT
+                c.*,
+                u.name AS assignedFaculty,
+                u.id AS assignedFacultyId
+            FROM courses c
+            LEFT JOIN course_faculty cf
+                ON c.id = cf.course_id
+            LEFT JOIN users u
+                ON cf.faculty_id = u.id
+            ORDER BY c.created_at DESC
+        `);
+
+        return res.status(200).json({
+            success: true,
+            courses: courses
+        });
+
+    } catch (error) {
+
+        console.log("Get Courses Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to fetch courses."
+        });
     }
-
-    const courseIds = courses.map((course) => course.id);
-    const placeholders = courseIds.map(() => "?").join(",");
-
-    const [assignments] = await db.execute(
-      `SELECT course_id, faculty_id
-       FROM course_faculty
-       WHERE course_id IN (${placeholders})`,
-      courseIds
-    );
-
-    const result = courses.map((course) => ({
-      ...course,
-      assignedFaculty: assignments
-        .filter((item) => Number(item.course_id) === Number(course.id))
-        .map((item) => Number(item.faculty_id)),
-    }));
-
-    return res.status(200).json({
-      success: true,
-      courses: result,
-    });
-  } catch (error) {
-    console.error("Get courses error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Unable to fetch courses.",
-    });
-  }
 };
 
 // GET /api/courses/:id

@@ -3,61 +3,122 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
 import API from "../api/axios.js";
 
-function ProtectedRoute() {
+const getLoginPath = (role) => {
+  if (role === "admin") return "/admin-login";
+  if (role === "faculty") return "/faculty-login";
+  return "/student-login";
+};
 
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [loading, setLoading] = useState(true);
+const getDashboardPath = (role) => {
+  if (role === "admin") return "/admin/dashboard";
+  if (role === "faculty") return "/faculty/dashboard";
+  return "/dashboard";
+};
 
-    useEffect(() => {
+function ProtectedRoute({ allowedRoles = ["student"] }) {
+  const rolesKey = allowedRoles.join("|");
+  const roles = rolesKey.split("|");
 
-        const verifyToken = async () => {
+  const [status, setStatus] = useState("checking");
+  const [redirectTo, setRedirectTo] = useState("");
 
-            const token = localStorage.getItem("studentToken");
+  useEffect(() => {
+    let isMounted = true;
 
-            if (!token) {
-                setLoading(false);
-                return;
-            }
+    const verifyToken = async () => {
+      const isStudentRoute = roles.includes("student");
 
-            try {
+      const token = isStudentRoute
+        ? localStorage.getItem("studentToken")
+        : localStorage.getItem("userToken") ||
+          sessionStorage.getItem("userToken");
 
-                // Verify token with backend
-                await API.get("/students/profile", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+      if (!token) {
+        if (isMounted) {
+          setRedirectTo(getLoginPath(roles[0]));
+          setStatus("denied");
+        }
+        return;
+      }
 
-                setIsAuthenticated(true);
+      try {
+        let actualRole;
 
-            } catch (error) {
+        if (isStudentRoute) {
+          // Verify Student token
+          await API.get("/students/profile", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-                // Invalid or expired token
-                localStorage.removeItem("studentToken");
-                localStorage.removeItem("studentData");
+          actualRole = "student";
+        } else {
+          // Verify Admin / Faculty token
+          const response = await API.get("/users/me", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-                setIsAuthenticated(false);
+          actualRole = response.data.user?.role;
 
-            } finally {
-                setLoading(false);
-            }
-        };
+          if (!actualRole) {
+            throw new Error("User role not found.");
+          }
+        }
 
-        verifyToken();
+        if (!isMounted) return;
 
-    }, []);
+        if (roles.includes(actualRole)) {
+          setStatus("allowed");
+        } else {
+          // Valid login, but the account has a different role.
+          setRedirectTo(getDashboardPath(actualRole));
+          setStatus("denied");
+        }
+      } catch (error) {
+        console.error("Authentication verification failed:", error);
 
-    if (loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center">
-                <p className="text-[#572000]">
-                    Verifying your login...
-                </p>
-            </div>
-        );
-    }
+        if (isStudentRoute) {
+          localStorage.removeItem("studentToken");
+          localStorage.removeItem("studentData");
+        } else {
+          localStorage.removeItem("userToken");
+          localStorage.removeItem("userData");
+          sessionStorage.removeItem("userToken");
+          sessionStorage.removeItem("userData");
+        }
 
-    return isAuthenticated ? <Outlet /> : <Navigate to="/student-login" replace />;
+        if (isMounted) {
+          setRedirectTo(getLoginPath(roles[0]));
+          setStatus("denied");
+        }
+      }
+    };
+
+    verifyToken();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [rolesKey]);
+
+  if (status === "checking") {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-[#572000]">
+          Verifying your login...
+        </p>
+      </div>
+    );
+  }
+
+  if (status === "denied") {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  return <Outlet />;
 }
 
 export default ProtectedRoute;

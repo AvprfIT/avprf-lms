@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Plus,
   Search,
@@ -15,67 +15,37 @@ import {
   Phone,
   BookOpen,
   ShieldCheck,
+  CheckCircle, AlertCircle
 } from "lucide-react";
 
-const initialFaculty = [
-  {
-    id: 1,
-    name: "Dr. Arun Kumar",
-    email: "arun@avpresearch.org",
-    phone: "9876543210",
-    qualification: "BAMS, MD (Ayurveda)",
-    specialization: "Clinical Ayurveda",
-    experience: "12 Years",
-    status: "Active",
-    assignedCourses: 2,
-  },
-  {
-    id: 2,
-    name: "Dr. Priya",
-    email: "priya@avpresearch.org",
-    phone: "9876543211",
-    qualification: "BAMS, MD",
-    specialization: "Panchakarma",
-    experience: "8 Years",
-    status: "Active",
-    assignedCourses: 1,
-  },
-  {
-    id: 3,
-    name: "Dr. Rahul",
-    email: "rahul@avpresearch.org",
-    phone: "9876543212",
-    qualification: "BAMS",
-    specialization: "Ayurveda Pharmacology",
-    experience: "5 Years",
-    status: "Inactive",
-    assignedCourses: 0,
-  },
-  {
-    id: 4,
-    name: "Dr. Meena",
-    email: "meena@avpresearch.org",
-    phone: "9876543213",
-    qualification: "BAMS, MD",
-    specialization: "Marma Therapy",
-    experience: "10 Years",
-    status: "Active",
-    assignedCourses: 1,
-  },
-];
+import API from "../../api/axios";
+
 
 const emptyFaculty = {
   name: "",
   email: "",
   phone: "",
-  qualification: "",
-  specialization: "",
-  experience: "",
-  status: "Active",
+  password: "",
+  role: "faculty",
+  status: "active",
 };
 
 function AdminFaculty() {
-  const [faculty, setFaculty] = useState(initialFaculty);
+
+  const [faculty, setFaculty] = useState([]);
+  useEffect(() => {
+    const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");;
+    API.get("/users/faculty", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => setFaculty(res.data.faculty))
+      .catch(err => console.log(err));
+
+  }, []);
+
+  const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState(null);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
@@ -87,11 +57,11 @@ function AdminFaculty() {
   const [viewFaculty, setViewFaculty] = useState(null);
 
   const activeCount = faculty.filter(
-    (item) => item.status === "Active"
+    (item) => item.status === "active"
   ).length;
 
   const inactiveCount = faculty.filter(
-    (item) => item.status === "Inactive"
+    (item) => item.status === "inactive"
   ).length;
 
   const filteredFaculty = faculty.filter((item) => {
@@ -136,14 +106,17 @@ function AdminFaculty() {
     }));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
 
-    if (!form.name.trim() || !form.email.trim()) {
-      alert("Please enter faculty name and email.");
-      return;
-    }
+    const newErrors = {};
 
+    if (!form.name.trim()) {
+      newErrors.name = "Name is required";
+    }
+    if (!form.email.trim()) {
+      newErrors.email = "Email is required";
+    }
     const emailExists = faculty.some(
       (item) =>
         item.email.toLowerCase() === form.email.trim().toLowerCase() &&
@@ -151,18 +124,55 @@ function AdminFaculty() {
     );
 
     if (emailExists) {
-      alert("This email address is already registered.");
+      newErrors.email = "This email address is already registered.";
+    }
+    if (!form.phone.trim()) {
+      newErrors.phone = "Phone is required";
+    }
+
+    if (!form.password) {
+      newErrors.password = "Password  is required";
+    }
+    if (!form.role) {
+      newErrors.role = "role  is required";
+    }
+    if (!form.status) {
+      newErrors.status = "status  is required";
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
 
     if (modalMode === "add") {
-      const newFaculty = {
-        ...form,
-        id: Date.now(),
-        assignedCourses: 0,
-      };
+      try {
+        const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
+        const response = await API.post(
+          "/users/faculty",
+          {
+            name: form.name,
+            email: form.email,
+            phone: form.phone,
+            password: form.password,
+            role: form.role,
+            status: form.status,
+            created_at: Date(),
+            updated_at: Date(),
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        setFaculty((previous) => [response.data.faculty, ...previous]);
+        setToast({
+          type: "success",
+          message: "Faculty created successfully!"
+        });
 
-      setFaculty((previous) => [newFaculty, ...previous]);
+      } catch (error) {
+        console.log(error);
+        setToast({ type: "error", message: error.response?.data?.message || "Failed to create faculty." });
+      }
     } else {
       setFaculty((previous) =>
         previous.map((item) =>
@@ -179,10 +189,10 @@ function AdminFaculty() {
       previous.map((item) =>
         item.id === id
           ? {
-              ...item,
-              status:
-                item.status === "Active" ? "Inactive" : "Active",
-            }
+            ...item,
+            status:
+              item.status === "Active" ? "Inactive" : "Active",
+          }
           : item
       )
     );
@@ -201,7 +211,41 @@ function AdminFaculty() {
   };
 
   return (
+
     <div className="space-y-6">
+
+      {toast && (
+        <div
+          className={`fixed right-5 top-5 z-[100] flex min-w-[300px] items-center gap-3 rounded-xl border p-4 shadow-lg ${toast.type === "success"
+              ? "border-green-200 bg-green-50"
+              : "border-red-200 bg-red-50"
+            }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle className="text-green-600" size={24} />
+          ) : (
+            <AlertCircle className="text-red-600" size={24} />
+          )}
+
+          <p
+            className={`flex-1 text-sm font-semibold ${toast.type === "success"
+                ? "text-green-700"
+                : "text-red-700"
+              }`}
+          >
+            {toast.message}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="text-gray-500 hover:text-gray-800"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -310,10 +354,6 @@ function AdminFaculty() {
                 <tr className="text-xs uppercase tracking-wide text-[#92745D]">
                   <th className="px-5 py-4 font-semibold">Faculty</th>
                   <th className="px-5 py-4 font-semibold">Contact</th>
-                  <th className="px-5 py-4 font-semibold">
-                    Specialization
-                  </th>
-                  <th className="px-5 py-4 font-semibold">Experience</th>
                   <th className="px-5 py-4 font-semibold">Courses</th>
                   <th className="px-5 py-4 font-semibold">Status</th>
                   <th className="px-5 py-4 text-right font-semibold">
@@ -335,8 +375,9 @@ function AdminFaculty() {
                           <p className="text-sm font-semibold text-[#572000]">
                             {item.name}
                           </p>
-                          <p className="mt-1 text-xs text-[#9B806C]">
-                            {item.qualification || "Qualification not added"}
+                          <p className="mt-1 flex items-center gap-2 text-xs text-[#9B806C]">
+                            <Phone size={13} />
+                        {item.phone || "Not provided"}
                           </p>
                         </div>
                       </div>
@@ -353,13 +394,7 @@ function AdminFaculty() {
                       </p>
                     </td>
 
-                    <td className="px-5 py-4 text-sm text-[#8B6B55]">
-                      {item.specialization || "-"}
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-[#8B6B55]">
-                      {item.experience || "-"}
-                    </td>
+                   
 
                     <td className="px-5 py-4">
                       <span className="rounded-lg bg-[#FFF3E5] px-3 py-1.5 text-xs font-semibold text-[#8B2E00]">
@@ -369,11 +404,10 @@ function AdminFaculty() {
 
                     <td className="px-5 py-4">
                       <span
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                          item.status === "Active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold ${item.status === "Active"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-600"
+                          }`}
                       >
                         {item.status}
                       </span>
@@ -463,9 +497,10 @@ function AdminFaculty() {
                     value={form.name}
                     onChange={handleChange}
                     placeholder="Enter full name"
-                    className="form-input"
-                    required
+                    className={`form-input ${errors.name ? "border-red-500" : ""
+                      }`}
                   />
+                  {errors.name && (<span className="mt-1 text-xs text-red-500">{errors.name}</span>)}
                 </div>
 
                 <div>
@@ -476,67 +511,63 @@ function AdminFaculty() {
                     value={form.email}
                     onChange={handleChange}
                     placeholder="faculty@example.com"
-                    className="form-input"
-                    required
+                    className={`form-input ${errors.email ? "border-red-500" : ""}`}
                   />
+                  {errors.email && (<span className="mt-1 text-xs text-red-500">{errors.email}</span>)}
                 </div>
 
                 <div>
-                  <label className="form-label">Phone Number</label>
+                  <label className="form-label">Phone Number *</label>
                   <input
                     type="tel"
                     name="phone"
                     value={form.phone}
                     onChange={handleChange}
                     placeholder="Enter phone number"
-                    className="form-input"
+                    className={`form-input ${errors.phone ? "border-red-500" : ""}`}
                   />
+                  {errors.phone && (<span className="mt-1 text-xs text-red-500">{errors.phone}</span>)}
                 </div>
 
                 <div>
-                  <label className="form-label">Qualification</label>
+                  <label className="form-label">Password *</label>
                   <input
-                    name="qualification"
-                    value={form.qualification}
+                    name="password"
+                    value={form.password}
                     onChange={handleChange}
-                    placeholder="Example: BAMS, MD"
-                    className="form-input"
+                    placeholder="*****"
+                    className={`form-input ${errors.password ? "border-red-500" : ""}`}
                   />
+                  {errors.password && (<span className="mt-1 text-xs text-red-500">{errors.password}</span>)}
                 </div>
 
                 <div>
-                  <label className="form-label">Specialization</label>
-                  <input
-                    name="specialization"
-                    value={form.specialization}
+                  <label className="form-label">Role *</label>
+                  <select
+                    name="role"
+                    value={form.role}
                     onChange={handleChange}
-                    placeholder="Enter specialization"
-                    className="form-input"
-                  />
+                    className={`form-input ${errors.role ? "border-red-500" : ""}`}
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="faculty">Faculty</option>
+                  </select>
+                  {errors.role && (<span className="mt-1 text-xs text-red-500">{errors.role}</span>)}
                 </div>
+
 
                 <div>
-                  <label className="form-label">Experience</label>
-                  <input
-                    name="experience"
-                    value={form.experience}
-                    onChange={handleChange}
-                    placeholder="Example: 5 Years"
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
                   <label className="form-label">Account Status</label>
                   <select
                     name="status"
                     value={form.status}
                     onChange={handleChange}
-                    className="form-input"
+                    className={`form-input ${errors.status ? "border-red-500" : ""}`}
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                   </select>
+                  {errors.status && (<span className="mt-1 text-xs text-red-500">{errors.status}</span>)}
                 </div>
               </div>
 
@@ -611,11 +642,10 @@ function AdminFaculty() {
                     {viewFaculty.specialization || "Faculty"}
                   </p>
                   <span
-                    className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-                      viewFaculty.status === "Active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
+                    className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${viewFaculty.status === "Active"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-100 text-gray-600"
+                      }`}
                   >
                     {viewFaculty.status}
                   </span>
@@ -690,11 +720,10 @@ function ActionButton({ children, onClick, title, danger = false }) {
       type="button"
       onClick={onClick}
       title={title}
-      className={`rounded-lg p-2 transition ${
-        danger
-          ? "text-red-500 hover:bg-red-50"
-          : "text-[#8B6B55] hover:bg-[#FFF3E5] hover:text-[#FF7600]"
-      }`}
+      className={`rounded-lg p-2 transition ${danger
+        ? "text-red-500 hover:bg-red-50"
+        : "text-[#8B6B55] hover:bg-[#FFF3E5] hover:text-[#FF7600]"
+        }`}
     >
       {children}
     </button>
