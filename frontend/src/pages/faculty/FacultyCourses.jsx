@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect,useState } from "react";
 import {
   BookOpen,
   Users,
@@ -12,73 +12,39 @@ import {
   Layers,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-
-import ClinicalImage from "../../assets/images/course-image.jpg";
-import MarmaImage from "../../assets/images/course-image.jpg";
-import AyurvedaImage from "../../assets/images/course-image.jpg";
-
-const courseData = [
-  {
-    id: 1,
-    title: "Advanced Clinical Ayurveda",
-    category: "Clinical Ayurveda",
-    description:
-      "Advanced learning in clinical Ayurveda, patient assessment and treatment approaches.",
-    students: 45,
-    lessons: 20,
-    duration: "6 Months",
-    status: "Active",
-    image: ClinicalImage,
-    completion: 75,
-  },
-  {
-    id: 2,
-    title: "Advanced Clinical Course - Marma Therapy",
-    category: "Marma Therapy",
-    description:
-      "Learn traditional Marma points, therapeutic techniques and practical applications.",
-    students: 32,
-    lessons: 15,
-    duration: "6 Days",
-    status: "Active",
-    image: MarmaImage,
-    completion: 60,
-  },
-  {
-    id: 3,
-    title: "Basic Ayurveda Course",
-    category: "Basic Ayurveda",
-    description:
-      "Understand the fundamental principles of Ayurveda and traditional healthcare.",
-    students: 51,
-    lessons: 18,
-    duration: "3 Months",
-    status: "Active",
-    image: AyurvedaImage,
-    completion: 90,
-  },
-  {
-    id: 4,
-    title: "Ayurveda Foundation Course",
-    category: "Ayurveda",
-    description:
-      "An introduction to Ayurveda concepts, lifestyle and foundational knowledge.",
-    students: 28,
-    lessons: 12,
-    duration: "2 Months",
-    status: "Completed",
-    image: AyurvedaImage,
-    completion: 100,
-  },
-];
+import API from "../../api/axios";
 
 function FacultyCourses() {
-  const [courses] = useState(courseData);
+  const [courses, setCourses] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
 
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const token =
+          localStorage.getItem("userToken") ||
+          sessionStorage.getItem("userToken");
+
+        const response = await API.get("/courses/faculty/assigned", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        setCourses(response.data.courses || []);
+
+      } catch (error) {
+        console.log("Course Error:", error);
+      }
+    };
+
+    // IMPORTANT: Function call
+    fetchCourses();
+
+  }, []);
+
   const activeCourses = courses.filter(
-    (course) => course.status === "Active"
+    (course) => course.status === "published"
   );
 
   const completedCourses = courses.filter(
@@ -92,7 +58,7 @@ function FacultyCourses() {
 
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =
-      course.title.toLowerCase().includes(search.toLowerCase()) ||
+      course.course_title.toLowerCase().includes(search.toLowerCase()) ||
       course.category.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus =
@@ -215,7 +181,7 @@ function FacultyCourses() {
             <div className="relative h-48 overflow-hidden">
               <img
                 src={course.image}
-                alt={course.title}
+                alt={course.course_title}
                 className="h-full w-full object-cover transition duration-500 hover:scale-105"
               />
 
@@ -238,11 +204,11 @@ function FacultyCourses() {
               </span>
 
               <h3 className="mt-2 min-h-12 text-lg font-bold text-[#572000]">
-                {course.title}
+                {course.course_title}
               </h3>
 
               <p className="mt-2 min-h-12 text-sm leading-6 text-gray-500">
-                {course.description}
+                {course.short_description}
               </p>
 
               {/* Course Details */}

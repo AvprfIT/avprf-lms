@@ -238,7 +238,6 @@ export const getAllFaculty = async (req, res) => {
   }
 };
 
-
 export const updateFaculty = async (req, res) => {
   try {
     const { id } = req.params;
@@ -336,7 +335,6 @@ export const updateFaculty = async (req, res) => {
     });
   }
 };
-
 
 export const deleteFaculty = async (req, res) => {
   try {

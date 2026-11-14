@@ -6,7 +6,8 @@ exports.up = async function (knex) {
     table.string("category", 100).nullable();
     table.string("duration", 100).nullable();
     table.string("eligibility",255).nullable();
-    table.text("description").nullable();
+    table.text("short_description").nullable();
+    table.longText("description").nullable();
     table.string("image", 500).nullable();
     table.enum("fee_type", ["free", "paid"]).notNullable().defaultTo("free");
     table.decimal("fee", 10, 2).notNullable().defaultTo(0);

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect,useState } from "react";
 import {
   BookOpen,
   Plus,
@@ -19,8 +19,10 @@ import {
   HelpCircle,
   GraduationCap,
   FilePlus,
+  CheckCircle, AlertCircle,
   Link as LinkIcon,
 } from "lucide-react";
+import API from "../../api/axios";
 
 const lessonTypes = [
   { value: "Video", label: "Video Lesson", icon: Video },
@@ -144,7 +146,34 @@ const emptyLesson = {
 };
 
 function CourseContent() {
-  const [courses, setCourses] = useState(initialCourses);
+  const [courses, setCourses] = useState([]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const token =
+          localStorage.getItem("userToken") ||
+          sessionStorage.getItem("userToken");
+
+        const response = await API.get("/courses/faculty/modules", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        setCourses(response.data.courses || []);
+
+      } catch (error) {
+        console.log("Course Error:", error);
+      }
+    };
+
+    // IMPORTANT: Function call
+    fetchCourses();
+
+  }, []);
+
+  
+  
   const [selectedCourseId, setSelectedCourseId] = useState(1);
 
   const [expandedModules, setExpandedModules] = useState([1]);
@@ -165,7 +194,7 @@ function CourseContent() {
   );
 
   const modules = selectedCourse?.modules || [];
-
+  
   const totalLessons = modules.reduce(
     (total, module) => total + module.lessons.length,
     0
@@ -198,6 +227,7 @@ function CourseContent() {
   };
 
   const openEditModule = (module) => {
+   
     setEditingModuleId(module.id);
     setModuleForm({
       title: module.title,
@@ -206,14 +236,59 @@ function CourseContent() {
     setShowModuleModal(true);
   };
 
-  const saveModule = (e) => {
+  const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timerId = window.setTimeout(() => setToast(null), 4000);
+    return () => window.clearTimeout(timerId);
+  }, [toast]);
+
+  const saveModule = async (e) => {
     e.preventDefault();
 
+    const newErrors = {};
+
     if (!moduleForm.title.trim()) {
-      alert("Please enter module title.");
-      return;
+      newErrors.title = "Module title is required";
     }
 
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
+    if (editingModuleId == null) {
+       
+       try {
+           const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
+           const response = await API.post(
+             "/courses/faculty/modules",
+             {
+               course_id: selectedCourseId,
+               module_title: moduleForm.title,
+               module_description: moduleForm.description,
+             },
+             {
+               headers: { Authorization: `Bearer ${token}` }
+             })        
+             setToast({
+             type: "success",
+             message: "Module created successfully!"
+           });
+   
+         } catch (error) {
+           console.log(error);
+           setToast({ type: "error", message: error.response?.data?.message || "Failed to create module." });
+         }
+   
+      }else{
+        setCourses((previous) =>
+        previous.map((module) =>
+          module.id === editingModuleId ? { ...module, ...moduleForm } : module
+        )
+      );
+    }
     let savedModuleId;
 
     setCourses((previous) =>
@@ -284,7 +359,6 @@ function CourseContent() {
   };
 
   // LESSON FUNCTIONS
-
   const openAddLesson = (moduleId) => {
     setSelectedModuleId(moduleId);
     setEditingLessonId(null);
@@ -438,6 +512,37 @@ function CourseContent() {
 
   return (
     <div className="min-h-screen ">
+       {toast && (
+        <div
+          className={`fixed right-5 top-5 z-[100] flex min-w-[300px] items-center gap-3 rounded-xl border p-4 shadow-lg ${toast.type === "success"
+              ? "border-green-200 bg-green-50"
+              : "border-red-200 bg-red-50"
+            }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle className="text-green-600" size={24} />
+          ) : (
+            <AlertCircle className="text-red-600" size={24} />
+          )}
+
+          <p
+            className={`flex-1 text-sm font-semibold ${toast.type === "success"
+                ? "text-green-700"
+                : "text-red-700"
+              }`}
+          >
+            {toast.message}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="text-gray-500 hover:text-gray-800"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
 
       {/* PAGE HEADER */}
       <div className="mb-7">
@@ -739,18 +844,20 @@ function CourseContent() {
           <form onSubmit={saveModule} className="space-y-4">
             <FormField label="Module Title">
               <input
-                required
+                name="title"
                 value={moduleForm.title}
                 onChange={(e) =>
                   setModuleForm({ ...moduleForm, title: e.target.value })
                 }
                 placeholder="e.g. Introduction to Ayurveda"
-                className="form-input"
+               className={`form-input ${errors.module_title ? "border-red-500" : ""}`}
               />
+              {errors.module_title && (<span className="mt-1 text-xs text-red-500">{errors.module_title}</span>)}
             </FormField>
 
             <FormField label="Module Description">
               <textarea
+                name="description"
                 rows={4}
                 value={moduleForm.description}
                 onChange={(e) =>

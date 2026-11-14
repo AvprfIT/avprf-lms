@@ -8,7 +8,13 @@ import {
   createCourse,
   updateCourse,
   deleteCourse,
+  getAssignedCourses,
+  createCurriculumModules,
+  updateCurriculumModules,
+  getAssignedCoursesWithModules
 } from "../controllers/courseController.js";
+
+import upload from "../middleware/upload.js";
 
 import {
   verifyUserToken,
@@ -17,17 +23,22 @@ import {
 
 const router = express.Router();
 
-// All course management routes require Admin login.
-router.use(verifyUserToken, authorizeRoles("admin"));
+// All routes require login
+router.use(verifyUserToken);
 
-// Faculty dropdown data
-router.get("/faculty", getFacultyList);
+// Admin-only routes
+router.get("/faculty", authorizeRoles("admin"), getFacultyList);
+router.get("/", authorizeRoles("admin"), getAllCourses);
+router.get("/:id", authorizeRoles("admin"), getCourseById);
+router.post("/", authorizeRoles("admin"), upload.single("image"), createCourse);
+router.put("/:id", authorizeRoles("admin"), upload.single("image"), updateCourse);
+router.delete("/:id", authorizeRoles("admin"), deleteCourse);
 
-// Course APIs
-router.get("/", getAllCourses);
-router.get("/:id", getCourseById);
-router.post("/", createCourse);
-router.put("/:id", updateCourse);
-router.delete("/:id", deleteCourse);
+
+// Faculty assigned courses **** faculty Portal ****
+router.get( "/faculty/assigned", authorizeRoles("faculty"), getAssignedCourses);
+router.post( "/faculty/modules", authorizeRoles("faculty"), createCurriculumModules);
+router.put("/faculty/modules/:id", authorizeRoles("faculty"),updateCurriculumModules);
+router.get( "/faculty/modules", authorizeRoles("faculty"), getAssignedCoursesWithModules);
 
 export default router;

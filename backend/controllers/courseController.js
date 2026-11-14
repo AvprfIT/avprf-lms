@@ -1,5 +1,6 @@
 
 import db from "../config/database.js";
+import { uploadCourseImage } from "../config/s3.js";
 
 const createSlug = (value = "") =>
   value
@@ -49,7 +50,6 @@ const validateFaculty = async (connection, facultyIds) => {
   }
 };
 
-// GET /api/courses
 // GET /api/courses
 export const getAllCourses = async (req, res) => {
     try {
@@ -162,6 +162,7 @@ export const createCourse = async (req, res) => {
       category,
       duration,
       eligibility,
+      short_description,
       description,
       image,
       fee_type = "free",
@@ -223,25 +224,26 @@ export const createCourse = async (req, res) => {
     const facultyIds = getFacultyIds(assignedFaculty);
 
     await connection.beginTransaction();
-
+    const imageUrl = req.file ? await uploadCourseImage(req.file) : null;
     await validateFaculty(connection, facultyIds);
 
     const [result] = await connection.execute(
       `INSERT INTO courses
       (
         course_title, slug, category, duration, eligibility,
-        description, image, fee_type, fee, start_date,
+        short_description, description, image, fee_type, fee, start_date,
         end_date, language, status, created_by
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         course_title.trim(),
         finalSlug,
         category || null,
         duration || null,
         eligibility || null,
+        short_description || null,
         description || null,
-        image || null,
+        imageUrl || null,
         fee_type,
         courseFee,
         start_date || null,
@@ -310,6 +312,7 @@ export const updateCourse = async (req, res) => {
       category,
       duration,
       eligibility,
+      short_description,
       description,
       image,
       fee_type,
@@ -380,6 +383,7 @@ export const updateCourse = async (req, res) => {
         category = ?,
         duration = ?,
         eligibility = ?,
+        short_description = ?,
         description = ?,
         image = ?,
         fee_type = ?,
@@ -396,6 +400,7 @@ export const updateCourse = async (req, res) => {
         category || null,
         duration || null,
         eligibility || null,
+        short_description || null,
         description || null,
         image || null,
         fee_type,
@@ -483,5 +488,207 @@ export const deleteCourse = async (req, res) => {
       success: false,
       message: "Unable to delete course.",
     });
+  }
+};
+
+// GET /api/courses/faculty/assigned
+export const getAssignedCourses = async (req, res) => {
+  try {
+    const facultyId = req.user.id;
+
+    const [courses] = await db.execute(
+      `SELECT c.*
+       FROM courses c
+       INNER JOIN course_faculty cf
+         ON c.id = cf.course_id
+       WHERE cf.faculty_id = ?
+       ORDER BY c.created_at DESC`,
+      [facultyId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      courses,
+    });
+
+  } catch (error) {
+    console.error("Get assigned courses error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch assigned courses.",
+    });
+  }
+};
+
+//POST /api/courses/faculty/create modules
+export const createCurriculumModules = async(req, res) =>{
+  const connection = await db.getConnection();
+
+  try {
+    const {
+      course_id,
+      module_title,
+      module_description, 
+      created_id     
+    } = req.body;
+
+    if (!module_title?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Module title is required.",
+      });
+    }
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Please log in before creating a module.",
+      });
+    }
+
+    const [result] = await connection.execute(
+      `INSERT INTO course_modules
+      (
+        course_id, module_title, module_description, created_id
+      )
+      VALUES (?, ?, ?, ?)`,
+      [
+        course_id,
+        module_title.trim(),
+        module_description || null,
+        req.user.id
+      ]
+    );
+
+    await connection.commit();
+
+    return res.status(201).json({
+      success: true,
+      message: "module created successfully.",
+    });
+  } catch (error) {
+    await connection.rollback();
+
+    console.error("Create module error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to create module.",
+    });
+  } finally {
+    connection.release();
+  }
+};
+
+//GET /api/courses/faculty/get modules 
+export const getAssignedCoursesWithModules = async (req, res) => {
+  try {
+    const facultyId = req.user.id;
+
+    const [rows] = await db.execute(
+      `SELECT
+          c.id AS course_id,
+          c.course_title,
+          cm.id AS module_id,
+          cm.module_title,
+          cm.module_description
+       FROM courses c
+       INNER JOIN course_faculty cf
+          ON c.id = cf.course_id
+       LEFT JOIN course_modules cm
+          ON c.id = cm.course_id
+       WHERE cf.faculty_id = ?
+       ORDER BY c.created_at DESC, cm.created_at ASC`,
+      [facultyId]
+    );
+
+    const courseMap = new Map();
+
+    rows.forEach((row) => {
+      if (!courseMap.has(row.course_id)) {
+        courseMap.set(row.course_id, {
+          id: row.course_id,
+          title: row.course_title,
+          modules: [],
+        });
+      }
+
+      const course = courseMap.get(row.course_id);
+
+      if (row.module_id) {
+        course.modules.push({
+          id: row.module_id,
+          title: row.module_title,
+          description: row.module_description,
+          lessons: [],
+        });
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      courses: Array.from(courseMap.values()),
+    });
+
+  } catch (error) {
+    console.error("Get courses modules error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch assigned courses.",
+    });
+  }
+};
+
+// PUT /api/courses/faculty/get modules 
+export const updateCurriculumModules = async (req, res) => {
+  const connection = await db.getConnection();
+
+  try {
+    const { id } = req.params;
+
+    const {
+      module_title,
+      module_description     
+    } = req.body;
+
+    if (!module_title?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Course title is required.",
+      });
+    }
+
+    await connection.beginTransaction();
+
+    await connection.execute(
+      `UPDATE course_modules SET
+        module_title = ?,
+        module_description = ?,      
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [
+        module_title.trim(),
+        module_description,        
+        id,
+      ]
+    );
+
+    await connection.commit();
+
+    return res.status(200).json({
+      success: true,
+      message: "Module updated successfully.",
+    });
+  } catch (error) {
+    await connection.rollback();
+
+    console.error("Update Module error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to update Module.",
+    });
+  } finally {
+    connection.release();
   }
 };

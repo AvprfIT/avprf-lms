@@ -72,7 +72,7 @@ function AdminCourses() {
   ).length;
 
   const draftCount = courses.filter(
-    (course) => course.status === "Draft"
+    (course) => course.status === "draft"
   ).length;
 
   const totalStudents = courses.reduce(
@@ -241,7 +241,7 @@ function AdminCourses() {
                   </h3>
 
                   <p className="mt-1 text-sm text-[#967D69]">
-                    {course.description || "No description added."}
+                    {course.short_description || "No description added."}
                   </p>
                 </div>
 
@@ -288,7 +288,6 @@ function AdminCourses() {
                     <Eye size={15} />
                     View
                   </button>
-
                   <button
                     onClick={() => navigate(`/admin/courses/edit/${course.id}`)}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#FF7600]/30 px-3 py-2 text-xs font-semibold text-[#E96900] hover:bg-[#FFF3E5]"
